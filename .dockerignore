@@ -5,3 +5,4 @@ Frontend/dist
 **/.env
 **/npm-debug.log*
 **/.DS_Store
+.node_modules
