@@ -20,10 +20,10 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    env_file:
+      - ./Backend/.env
     environment:
       - MONGO_URI=mongodb://mongo:27017/interview-ai
-      - JWT_SECRET=${JWT_SECRET:-c2f58992ad367bf0f9a2d8e411bfe746a815a5f6e80b2a759b657e3f2258ea1a}
-      - GOOGLE_GENAI_API_KEY=${GOOGLE_GENAI_API_KEY}
     depends_on:
       - mongo
     networks:
