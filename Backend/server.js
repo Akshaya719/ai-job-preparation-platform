@@ -5,6 +5,7 @@ const connectToDB = require("./src/config/database")
 connectToDB()
 
 
+// Trigger GitHub Actions CI/CD pipeline verification
 app.listen(3000, () => {
     console.log("Server is running on port 3000")
 })
