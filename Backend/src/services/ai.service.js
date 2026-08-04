@@ -3,10 +3,43 @@ const { z } = require("zod")
 const { zodToJsonSchema } = require("zod-to-json-schema")
 const puppeteer = require("puppeteer")
 
+// FIFO Request Queue to serialize and throttle calls to the Gemini API (protects against rate limits)
+class RequestQueue {
+    constructor() {
+        this.queue = [];
+        this.processing = false;
+    }
+
+    enqueue(task) {
+        return new Promise((resolve, reject) => {
+            this.queue.push({ task, resolve, reject });
+            this.processNext();
+        });
+    }
+
+    async processNext() {
+        if (this.processing || this.queue.length === 0) return;
+        this.processing = true;
+
+        const { task, resolve, reject } = this.queue.shift(); // Dequeue (FIFO)
+        try {
+            const result = await task();
+            resolve(result);
+        } catch (error) {
+            reject(error);
+        } finally {
+            this.processing = false;
+            this.processNext();
+        }
+    }
+}
+
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
+const aiQueue = new RequestQueue() // Queue Instance
+const reportCache = new Map()      // Map Cache Instance
 
 const interviewReportSchema = z.object({
     matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job describe"),
@@ -33,26 +66,51 @@ const interviewReportSchema = z.object({
 })
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
+    // Generate a unique cache key using a simple string representation of the parameters
+    const cacheKey = `${resume.slice(0, 100)}|${selfDescription.slice(0, 100)}|${jobDescription.slice(0, 100)}`;
+    
+    // Hash Map check (O(1) lookup)
+    if (reportCache.has(cacheKey)) {
+        console.log("Serving interview report from in-memory Map cache.");
+        return reportCache.get(cacheKey);
+    }
 
+    const task = async () => {
+        const prompt = `Generate an interview report for a candidate with the following details:
+                            Resume: ${resume}
+                            Self Description: ${selfDescription}
+                            Job Description: ${jobDescription}
+    `
 
-    const prompt = `Generate an interview report for a candidate with the following details:
-                        Resume: ${resume}
-                        Self Description: ${selfDescription}
-                        Job Description: ${jobDescription}
-`
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: zodToJsonSchema(interviewReportSchema),
+            }
+        })
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: zodToJsonSchema(interviewReportSchema),
-        }
-    })
+        const report = JSON.parse(response.text)
 
-    return JSON.parse(response.text)
+        // Deduplicate the skillGaps array using a Set (Set lookup/insertion)
+        const uniqueSkills = new Set();
+        report.skillGaps = report.skillGaps.filter(gap => {
+            const skillNormalized = gap.skill.toLowerCase().trim();
+            if (uniqueSkills.has(skillNormalized)) {
+                return false; // Skip duplicate
+            }
+            uniqueSkills.add(skillNormalized);
+            return true;
+        });
 
+        // Store result in the Map cache before returning
+        reportCache.set(cacheKey, report);
+        return report;
+    };
 
+    // Queue request to handle rate limiting sequentially
+    return aiQueue.enqueue(task);
 }
 
 
