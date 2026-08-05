@@ -43,12 +43,12 @@ export const useAuth = () => {
     const handleLogout = async () => {
         setLoading(true)
         try {
-            const data = await logout()
+            await logout()
             setUser(null)
             return { success: true }
         } catch (err) {
-            console.error("Logout error:", err)
-            return { success: false }
+            setUser(null)
+            return { success: true }
         } finally {
             setLoading(false)
         }
@@ -62,8 +62,8 @@ export const useAuth = () => {
                 if (data?.user) {
                     setUser(data.user)
                 }
-            } catch (err) { 
-                console.error("Failed to fetch user:", err)
+            } catch (err) {
+                setUser(null)
             } finally {
                 setLoading(false)
             }

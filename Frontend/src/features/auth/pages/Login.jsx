@@ -1,29 +1,28 @@
-import React,{useState} from 'react'
+import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
 import "../auth.form.scss"
 import { useAuth } from '../hooks/useAuth'
 
 const Login = () => {
-
     const { loading, handleLogin } = useAuth()
     const navigate = useNavigate()
 
-    const [ email, setEmail ] = useState("")
-    const [ password, setPassword ] = useState("")
-    const [ error, setError ] = useState("")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [error, setError] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError("")
-        
-        if (!email || !password) {
-            setError("Please fill in all fields")
+
+        if (!email.trim() || !password) {
+            setError("Please fill in both fields to continue.")
             return
         }
-        
-        const result = await handleLogin({email, password})
-        console.log("Login result:", result)
-        
+
+        const result = await handleLogin({ email: email.trim(), password })
+
         if (result.success) {
             navigate('/')
         } else {
@@ -31,32 +30,66 @@ const Login = () => {
         }
     }
 
-    if(loading){
-        return (<main><h1>Loading.......</h1></main>)
+    if (loading) {
+        return (
+            <main className="auth-shell">
+                <div className="auth-card auth-card--loading">
+                    <div className="spinner" />
+                    <p>Preparing your secure workspace…</p>
+                </div>
+            </main>
+        )
     }
 
-
     return (
-        <main>
-            <div className="form-container">
-                <h1>Login</h1>
-                {error && <p style={{color: '#d20d3b', marginBottom: '1rem'}}>{error}</p>}
-                <form onSubmit={handleSubmit}>
+        <main className="auth-shell">
+            <div className="auth-card">
+                <div className="auth-card__hero">
+                    <p className="eyebrow">Secure access</p>
+                    <h1>Welcome back</h1>
+                    <p>Sign in to continue building your interview strategy with confidence.</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="auth-form">
+                    {error && <div className="auth-error">{error}</div>}
+
                     <div className="input-group">
                         <label htmlFor="email">Email</label>
                         <input
-                            onChange={(e) => { setEmail(e.target.value) }}
-                            type="email" id="email" name='email' placeholder='Enter email address' />
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="you@example.com"
+                            autoComplete="email"
+                        />
                     </div>
+
                     <div className="input-group">
                         <label htmlFor="password">Password</label>
-                        <input
-                            onChange={(e) => { setPassword(e.target.value) }}
-                            type="password" id="password" name='password' placeholder='Enter password' />
+                        <div className="password-field">
+                            <input
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                type={showPassword ? 'text' : 'password'}
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autoComplete="current-password"
+                            />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? 'Hide' : 'Show'}
+                            </button>
+                        </div>
                     </div>
-                    <button className='button primary-button' >Login</button>
+
+                    <button className="button primary-button">Sign in</button>
                 </form>
-                <p>Don't have an account? <Link to={"/register"} >Register</Link> </p>
+
+                <p className="auth-switch">
+                    New here? <Link to="/register">Create an account</Link>
+                </p>
             </div>
         </main>
     )

@@ -20,8 +20,30 @@ async function registerUserController(req, res) {
             })
         }
 
+        const trimmedUsername = username.trim()
+        const trimmedEmail = email.trim().toLowerCase()
+        const trimmedPassword = password.trim()
+
+        if (trimmedUsername.length < 3 || trimmedUsername.length > 24) {
+            return res.status(400).json({
+                message: "Username must be between 3 and 24 characters"
+            })
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+            return res.status(400).json({
+                message: "Please provide a valid email address"
+            })
+        }
+
+        if (trimmedPassword.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters"
+            })
+        }
+
         const isUserAlreadyExists = await userModel.findOne({
-            $or: [{ username }, { email }]
+            $or: [{ username: trimmedUsername }, { email: trimmedEmail }]
         })
 
         if (isUserAlreadyExists) {
@@ -30,11 +52,11 @@ async function registerUserController(req, res) {
             })
         }
 
-        const hash = await bcrypt.hash(password, 10)
+        const hash = await bcrypt.hash(trimmedPassword, 10)
 
         const user = await userModel.create({
-            username,
-            email,
+            username: trimmedUsername,
+            email: trimmedEmail,
             password: hash
         })
 
@@ -51,8 +73,10 @@ async function registerUserController(req, res) {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/"
         })
 
         res.status(201).json({
@@ -92,7 +116,10 @@ async function loginUserController(req, res) {
             })
         }
 
-        const user = await userModel.findOne({ email })
+        const trimmedEmail = email.trim().toLowerCase()
+        const trimmedPassword = password.trim()
+
+        const user = await userModel.findOne({ email: trimmedEmail })
 
         if (!user) {
             return res.status(400).json({
@@ -101,7 +128,7 @@ async function loginUserController(req, res) {
         }
 
         const isPasswordValid = await bcrypt.compare(
-            password,
+            trimmedPassword,
             user.password
         )
 
@@ -124,8 +151,10 @@ async function loginUserController(req, res) {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/"
         })
 
         res.status(200).json({
@@ -160,10 +189,14 @@ async function logoutUserController(req, res) {
         const token = req.cookies.token
 
         if (token) {
-            await tokenBlacklistModel.create({ token })
+            await tokenBlacklistModel.findOneAndUpdate(
+                { token },
+                { token },
+                { upsert: true, new: true }
+            )
         }
 
-        res.clearCookie("token")
+        res.clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" })
 
         res.status(200).json({
             message: "User logged out successfully"

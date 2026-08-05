@@ -6,10 +6,10 @@ $bg-input:       #1e2535;
 $border-color:   #2a3348;
 $text-primary:   #e6edf3;
 $text-muted:     #7d8590;
-$accent:         #ff2d78;
-$accent-alt:     #ff6b9d;
-$badge-required: #ff2d78;
-$badge-best:     #ff2d78;
+$accent:         #2563eb;
+$accent-alt:     #4f8cff;
+$badge-required: #2563eb;
+$badge-best:     #2563eb;
 $info-bg:        #1b2a4a;
 $info-border:    #2d4a7a;
 $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -28,6 +28,80 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
     justify-content: center;
     padding: 3rem 1.5rem;
     gap: 2rem;
+}
+
+// ── Topbar ─────────────────────────────────────────────────────────────────
+.topbar {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: rgba(22, 27, 34, 0.9);
+    border: 1px solid $border-color;
+    border-radius: 999px;
+    backdrop-filter: blur(18px);
+
+    &__eyebrow {
+        margin: 0 0 0.2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.24em;
+        font-size: 0.68rem;
+        color: $accent;
+        font-weight: 700;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 1rem;
+        color: $text-primary;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__user {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+        color: $text-primary;
+        font-size: 0.9rem;
+    }
+
+    &__avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, $accent 0%, #7eb0ff 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+}
+
+.ghost-button {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: $text-primary;
+    padding: 0.6rem 0.9rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 45, 120, 0.4);
+    }
 }
 
 // ── Page Header ──────────────────────────────────────────────────────────────

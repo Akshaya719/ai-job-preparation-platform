@@ -2,10 +2,12 @@ import React, { useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
+import { useAuth } from '../../auth/hooks/useAuth.js'
 
 const Home = () => {
 
     const { loading, generateReport, reports } = useInterview()
+    const { user, handleLogout } = useAuth()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
     const [ selectedFile, setSelectedFile ] = useState(null)
@@ -13,6 +15,13 @@ const Home = () => {
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
+
+    const onLogout = async () => {
+        const result = await handleLogout()
+        if (result.success) {
+            navigate('/login')
+        }
+    }
 
     const handleDrag = (e) => {
         e.preventDefault()
@@ -86,6 +95,19 @@ const Home = () => {
 
     return (
         <div className='home-page'>
+            <header className='topbar'>
+                <div>
+                    <p className='topbar__eyebrow'>AI Interview Studio</p>
+                    <h2>Interview Intelligence</h2>
+                </div>
+                <div className='topbar__actions'>
+                    <div className='topbar__user'>
+                        <span className='topbar__avatar'>{user?.username?.[0]?.toUpperCase() || 'U'}</span>
+                        <span>{user?.username || 'Professional'}</span>
+                    </div>
+                    <button className='ghost-button' onClick={onLogout}>Sign out</button>
+                </div>
+            </header>
 
             {/* Page Header */}
             <header className='page-header'>
